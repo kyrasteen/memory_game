@@ -1,0 +1,48 @@
+.match-beest .match-beest__tile {
+  fill: tomato;
+  stroke: #821b05;
+  transform: rotate(0deg) scale(1);
+  transition: transform .2s, fill .2s;
+  transform-origin: initial;
+  cursor: pointer;
+}
+.match-beest .match-beest__tile:hover {
+  fill: #f58f7c;
+  transform: rotate(2deg) scale(1.02);
+  transition: transform .2s, fill .2s;
+}
+
+.match-beest .match-beest__tile--flipped {
+  fill:#0df5b1;
+  stroke:#0d966e;
+}
+
+.match-beest .match-beest__tile--matched {
+  fill:#c7f10c;
+  stroke: #6f8609;
+}
+
+.match-beest .match-beest__tile--expanded {
+  transform: scale(6);
+  transition: transform .2s, fill .2s;
+  transform-origin: 60% 20%;
+}
+
+.match-beest .match-beest__tile--fade {
+  fill-opacity: 0.07;
+  stroke-opacity: 0.07;
+}
+
+.match-beest .match-beest__tile--static {
+  pointer-events: none;
+  fill:#c7f10c;
+  stroke: #6f8609;
+}
+
+.match-beest .match-beest__text {
+  opacity: 0;
+}
+
+.match-beest .match-beest__text--visible {
+  opacity: 1;
+}
