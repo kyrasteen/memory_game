@@ -1,37 +1,28 @@
-// set in storage?
-// randomize data match id assignments
-// different levels of difficulty - time of flipped tile
-// message on complete?
-
-// states:
-// flipped - up to two active tiles at a time
-// expanded
-// matched
-// standard
-
-// how can I decrease amount of DOM queries?
-// how can I keep functions pure?
-// how can I remove cross model dependencies?
-
 const STATUSES = {
-  EXPANDED: 'expanded',
+  ACTIVE: 'active',
+  // INACTIVE: 'inactive',
   FLIPPED: 'flipped',
   MATCHED: 'matched',
   UNMATCHED: 'unmatched',
+  STATIC: 'static',
 };
 
 const statusClassMap = {
-  [STATUSES.EXPANDED]: 'match-beest__tile--expanded',
+  [STATUSES.ACTIVE]: 'match-beest__tile--active',
+  // [STATUSES.INACTIVE]: 'match-beest__tile--inactive',
   [STATUSES.FLIPPED]: 'match-beest__tile--flipped',
   [STATUSES.MATCHED]: 'match-beest__tile--matched',
   [STATUSES.UNMATCHED]: 'match-beest__tile',
+  [STATUSES.STATIC]: 'match-beest__tile--static',
 };
 
 const statusSelectorMap = {
-  [STATUSES.EXPANDED]: '.match-beest__tile--expanded',
-  [STATUSES.FLIPPED]: '.match-beest__tile--flipped',
-  [STATUSES.MATCHED]: '.match-beest__tile--matched',
-  [STATUSES.UNMATCHED]: '.match-beest__tile',
+  [STATUSES.ACTIVE]: `.${statusClassMap[STATUSES.ACTIVE]}`,
+  // [STATUSES.INACTIVE]: `.${statusClassMap[STATUSES.INACTIVE]}`,
+  [STATUSES.FLIPPED]: `.${statusClassMap[STATUSES.FLIPPED]}`,
+  [STATUSES.MATCHED]: `.${statusClassMap[STATUSES.MATCHED]}`,
+  [STATUSES.UNMATCHED]: `.${statusClassMap[STATUSES.UNMATCHED]}`,
+  [STATUSES.STATIC]: `.${statusClassMap[STATUSES.STATIC]}`,
 };
 
 // tile model
@@ -40,21 +31,26 @@ const Tile = {
     return {
       id: node.dataset.id,
       matchId: node.dataset.matchId,
-      isExpanded: false,
-      toggleExpanded: function() {
-        this.isExpanded = !this.isExpanded;
+      isActive: false,
+      toggleActive: function() {
+        this.isActive = !this.isActive;
       },
     };
   },
 };
 
-// add 'ui' property under beest model and get rid of ui model
 // beest model
 const Matchbeest = {
   initialize: function() {
     this.ui = {
-      tileNodes: this.mapClickHandlersToTiles(),
+      tileNodes: [...this.mapClickHandlersToTiles()],
+      staticNodes: [...this.getStaticNodes()],
+      toggleActiveTileClass: this.toggleActiveTileClass,
+      // toggleInActiveTileClass: this.toggleInActiveTileClass,
+      toggleTextDisplay: this.toggleTextDisplay,
+      getStaticNodes: this.getStaticNodes,
     };
+    // changed 'flipped' to 'active'?
     this.tiles = {
       all: this.createTiles(),
       unmatched: this.createTiles(),
@@ -73,68 +69,42 @@ const Matchbeest = {
 
   handleTileClick: function(ev) {
     const node = ev.target;
-    const tile = Matchbeest.getTileById(node.dataset.id);
-    const primaryFlippedTileNode = this.getPrimaryFlippedTileNode();
+    const tile = this.getTileById(node.dataset.id);
 
-    const text = document.querySelector(`text[data-tile-id='${tile.id}']`);
-    text.classList.toggle('match-beest__text--visible');
+    // move to state?
+    const text = document.querySelector(`h5[data-tile-id='${tile.id}']`);
 
-    if (tile.isExpanded) {
-      node.classList.remove(statusClassMap[STATUSES.EXPANDED]);
-      this.ui.tileNodes.forEach(node => {
-        if (node.dataset.id !== tile.id) {
-          node.classList.remove('match-beest__tile--fade');
-        }
-      });
-      const staticNodes = document.querySelectorAll('.match-beest__tile--static');
-      staticNodes.forEach(node => {
-        node.classList.remove('match-beest__tile--fade');
-      });
-    } else {
-      node.classList.add(statusClassMap[STATUSES.EXPANDED]);
-      this.ui.tileNodes.forEach(node => {
-        if (node.dataset.id !== tile.id) {
-          node.classList.add('match-beest__tile--fade');
-        }
-      });
-      const staticNodes = document.querySelectorAll('.match-beest__tile--static');
-      staticNodes.forEach(node => {
-        node.classList.add('match-beest__tile--fade');
-      });
-    }
-    tile.toggleExpanded();
-    // add border/stroke of where tile should be
+    // UI changes
+    this.ui.toggleActiveTileClass(node);
+    // this.ui.tileNodes.concat(this.ui.staticNodes).forEach(node => {
+    //   if (node.dataset.id !== tile.id) {
+    //     this.ui.toggleInActiveTileClass(node);
+    //   }
+    // });
 
-    // only continue if a different tile was clicked than already flippped tile;
-    if (!!primaryFlippedTileNode && this.getPrimaryFlippedTile().id !== tile.id) {
-      if (this.isMatch(tile)) {
-        node.classList.replace(statusClassMap[STATUSES.UNMATCHED], statusClassMap[STATUSES.MATCHED]);
-        primaryFlippedTileNode.classList.replace(statusClassMap[STATUSES.FLIPPED], statusClassMap[STATUSES.MATCHED]);
-        this.setMatched();
-      } else {
-        this.getPrimaryFlippedTileNode().classList.replace(
-          statusClassMap[STATUSES.FLIPPED],
-          statusClassMap[STATUSES.UNMATCHED]
-        );
-        node.classList.replace(statusClassMap[STATUSES.FLIPPED], statusClassMap[STATUSES.UNMATCHED]);
-        this.setUnmatched();
-      }
-    } else if (!this.getPrimaryFlippedTile() && tile.isExpanded) {
-      node.classList.replace(statusClassMap[STATUSES.UNMATCHED], statusClassMap[STATUSES.FLIPPED]);
+    // data changes
+    tile.toggleActive();
+
+    if (tile.isActive) {
       this.flipTile(tile);
+      if (this.isSecondaryFlippedTile(tile)) {
+        this.ui.toggleTextDisplay(text);
+        this.determineMatch(tile, node);
+        if (this.tiles.matched.length === 2) {
+          this.handleWin();
+        }
+      } else {
+        // hide all current text
+        document.querySelectorAll('.match-beest__text--visible').forEach(textNode => {
+          this.ui.toggleTextDisplay(textNode);
+        });
+
+        // set visiblity on assoc text
+        this.ui.toggleTextDisplay(text);
+
+        node.classList.replace(statusClassMap[STATUSES.UNMATCHED], statusClassMap[STATUSES.FLIPPED]);
+      }
     }
-    // if there is already a flipped tile, and if matched
-    // then set classname matched
-    // add tiles to matched array
-
-    // if there is already a flipped tile, and no match
-    // keep classname to unmatched
-    // set existing flipped tile to unmatched status
-    // add tiles to unmatched array
-    // remove existing flipped tile in flipped array
-
-    // if flipped tiles is empty
-    // just do the below
   },
 
   createTiles: function() {
@@ -144,11 +114,24 @@ const Matchbeest = {
     });
     return tiles;
   },
-  flipTile: function(tile) {
-    this.tiles.unmatched = this.tiles.unmatched.filter(unmatchedTile => {
-      return unmatchedTile.id !== tile.id;
-    });
-    this.tiles.flipped.push(tile);
+  toggleActiveTileClass: function(tileNode) {
+    tileNode.classList.toggle(statusClassMap[STATUSES.ACTIVE]);
+  },
+  // toggleInActiveTileClass: function(tileNode) {
+  //   tileNode.classList.toggle(statusClassMap[STATUSES.INACTIVE]);
+  // },
+  toggleTextDisplay: function(text) {
+    text.classList.toggle('match-beest__text--visible');
+  },
+  getStaticNodes: function() {
+    return document.querySelectorAll(statusSelectorMap[STATUSES.STATIC]);
+  },
+  getPrimaryFlippedTileNode: function() {
+    if (!!this.getPrimaryFlippedTile()) {
+      return this.ui.tileNodes.find(tileNode => {
+        return tileNode.dataset.id === this.getPrimaryFlippedTile().id;
+      });
+    }
   },
   setMatched: function() {
     this.tiles.matched = this.tiles.matched.concat(this.tiles.flipped);
@@ -158,28 +141,44 @@ const Matchbeest = {
     this.tiles.unmatched = this.tiles.unmatched.concat(this.tiles.flipped);
     this.resetFlipped();
   },
+  flipTile: function(tile) {
+    // object assign
+    this.tiles.unmatched = this.tiles.unmatched.filter(unmatchedTile => {
+      return unmatchedTile.id !== tile.id;
+    });
+    this.tiles.flipped.push(tile);
+  },
   resetFlipped: function() {
     this.tiles.flipped = [];
   },
   getTileById: function(tileId) {
     return this.tiles.all.find(tile => tile.id === tileId);
   },
-  getPrimaryFlippedTileNode: function() {
-    if (!!this.getPrimaryFlippedTile()) {
-      let primaryFlippedTileNode;
-      this.ui.tileNodes.forEach(tileNode => {
-        if (tileNode.dataset.id === this.getPrimaryFlippedTile().id) {
-          primaryFlippedTileNode = tileNode;
-        }
-      });
-      return primaryFlippedTileNode;
-    }
-  },
   getPrimaryFlippedTile: function() {
     return this.tiles.flipped[0];
   },
+  isSecondaryFlippedTile: function(tile) {
+    return !!this.getPrimaryFlippedTile() && this.getPrimaryFlippedTile().id !== tile.id;
+  },
   isMatch: function(tile) {
     return tile.matchId === this.getPrimaryFlippedTile().matchId;
+  },
+  determineMatch: function(tile, node) {
+    const primaryFlippedClassList = this.getPrimaryFlippedTileNode().classList;
+    if (this.isMatch(tile)) {
+      node.classList.replace(statusClassMap[STATUSES.UNMATCHED], statusClassMap[STATUSES.MATCHED]);
+      primaryFlippedClassList.replace(statusClassMap[STATUSES.FLIPPED], statusClassMap[STATUSES.MATCHED]);
+      this.setMatched();
+    } else {
+      primaryFlippedClassList.replace(statusClassMap[STATUSES.FLIPPED], statusClassMap[STATUSES.UNMATCHED]);
+      node.classList.replace(statusClassMap[STATUSES.FLIPPED], statusClassMap[STATUSES.UNMATCHED]);
+      this.setUnmatched();
+    }
+  },
+  handleWin: function() {
+    // find mouth node, add class
+    const matchBeest = document.querySelector('.match-beest');
+    matchBeest.classList.add('match-beest--complete');
   },
 };
 
