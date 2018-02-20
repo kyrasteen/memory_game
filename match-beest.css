@@ -4,37 +4,38 @@
   color: #590515;
 }
 
+.match-beest--complete .match-beest__tile--matched[data-id="tile_25"]{
+  pointer-events: none;
+  transform: rotate(-30deg);
+  transform-origin: top left;
+  transition: transform 300ms;
+}
+
 .match-beest .match-beest__bubble {
   stroke: #590515;
   opacity: 0;
   transform: translate(440px, 130px) scale(0.5);
 }
 
-.match-beest--complete .match-beest__tile[data-id="tile_25"]{
-  pointer-events: none;
-  transform: rotate(-30deg);
-  transform-origin: top left;
-  transition: transform 1s;
-}
-
 .match-beest--complete .match-beest__bubble {
+  fill: #c7f10c;
+  stroke: #6f8609;
   opacity: 1;
 }
-
 
 /* tile */
 .match-beest .match-beest__tile {
   fill: tomato;
-  stroke: #821b05;
+  stroke: #590515;
   transform: rotate(0deg) scale(1);
-  transition: transform .2s, fill .2s;
+  transition: transform 300ms, fill 300ms;
   transform-origin: initial;
   cursor: pointer;
 }
 .match-beest .match-beest__tile:hover {
-  fill: #f58f7c;
-  transform: rotate(2deg) scale(1.02);
-  transition: transform .2s, fill .2s;
+  fill-opacity: 0.7;
+  transform: rotate(3deg) scale(1.02);
+  transition: transform 300ms, fill 300ms;
 }
 
 .match-beest .match-beest__tile--flipped {
@@ -43,17 +44,16 @@
 }
 
 .match-beest .match-beest__tile--matched {
+  pointer-events: none;
   fill:#c7f10c;
   stroke: #6f8609;
 }
-.match-beest .match-beest__tile--matched:not(.match-beest__tile--active) {
-  pointer-events: none;
-}
 
-.match-beest .match-beest__tile--inactive {
+.match-beest .match-beest__tile--disabled {
   pointer-events: none;
-  fill-opacity: 0.07;
-  stroke-opacity: 0.07;
+  fill-opacity: 0.1;
+  stroke-opacity: 0.1;
+  transition: all 300ms;
 }
 
 .match-beest .match-beest__tile--static {
@@ -69,4 +69,5 @@
 
 .match-beest__text-container .match-beest__text--visible {
   display: block;
+  background: #0df5b1;
 }
