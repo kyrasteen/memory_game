@@ -4,17 +4,10 @@
   color: #590515;
 }
 
-.match-beest--complete .match-beest__tile--matched[data-id="tile_25"]{
-  pointer-events: none;
-  transform: rotate(-30deg);
-  transform-origin: top left;
-  transition: transform 300ms;
-}
-
 .match-beest .match-beest__bubble {
   stroke: #590515;
   opacity: 0;
-  transform: translate(440px, 130px) scale(0.5);
+  transform: translate(430px, 140px) scale(0.5);
 }
 
 .match-beest--complete .match-beest__bubble {
@@ -34,8 +27,6 @@
 }
 .match-beest .match-beest__tile:hover {
   fill-opacity: 0.7;
-  transform: rotate(3deg) scale(1.02);
-  transition: transform 300ms, fill 300ms;
 }
 
 .match-beest .match-beest__tile--flipped {
